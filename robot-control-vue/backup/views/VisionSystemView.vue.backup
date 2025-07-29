@@ -1,0 +1,210 @@
+<template>
+  <div>
+    <Navbar />
+    <main class="main-content vision-system-main">
+      <section class="camera-section">
+        <div class="camera-preview-box">
+          <video ref="videoRef" autoplay playsinline class="camera-preview" />
+        </div>
+        <div class="camera-controls">
+          <label>拍摄间隔(秒):
+            <input type="number" v-model.number="interval" min="1" max="60" style="width:60px;" />
+          </label>
+          <label>每段视频时长(秒):
+            <input type="number" v-model.number="duration" min="1" max="30" style="width:60px;" />
+          </label>
+          <button @click="startCapture" :disabled="isCapturing">拍摄</button>
+          <button @click="stopCapture" :disabled="!isCapturing">停止</button>
+        </div>
+        <div class="video-list-section">
+          <h4>已拍摄视频</h4>
+          <div v-if="videos.length === 0" class="empty-tip">暂无视频</div>
+          <ul class="video-list">
+            <li v-for="(video, idx) in videos" :key="idx">
+              <video :src="video.url" controls width="180" height="120" style="vertical-align:middle;" />
+              <span style="margin-left:8px;">{{ video.name }}</span>
+              <button @click="downloadVideo(video)">下载</button>
+              <button @click="deleteVideo(idx)">删除</button>
+            </li>
+          </ul>
+        </div>
+      </section>
+      <!-- 弹窗组件 -->
+      <MotionAnalysisDialog :visible="showMotionDialog" :videos="videos" @close="showMotionDialog=false" />
+      <TongueAnalysisDialog :visible="showTongueDialog" :videos="videos" @close="showTongueDialog=false" />
+    </main>
+  </div>
+</template>
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import Navbar from '../components/Navbar.vue';
+import MotionAnalysisDialog from '../components/MotionAnalysisDialog.vue';
+import TongueAnalysisDialog from '../components/TongueAnalysisDialog.vue';
+
+const videoRef = ref(null);
+const mediaStream = ref(null);
+const mediaRecorder = ref(null);
+const isCapturing = ref(false);
+const interval = ref(5);
+const duration = ref(5);
+const videos = ref([]); // {url, name, blob}
+let captureTimer = null;
+let segmentTimer = null;
+
+const showMotionDialog = ref(false);
+const showTongueDialog = ref(false);
+
+// 顶部栏按钮事件（Navbar通过emit或全局事件总线触发）
+// 这里假设Navbar通过window事件触发弹窗
+onMounted(() => {
+  window.addEventListener('open-motion-dialog', () => showMotionDialog.value = true);
+  window.addEventListener('open-tongue-dialog', () => showTongueDialog.value = true);
+  startCamera();
+});
+onBeforeUnmount(() => {
+  stopCamera();
+  window.removeEventListener('open-motion-dialog', () => showMotionDialog.value = true);
+  window.removeEventListener('open-tongue-dialog', () => showTongueDialog.value = true);
+});
+
+function startCamera() {
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then(stream => {
+      mediaStream.value = stream;
+      if (videoRef.value) videoRef.value.srcObject = stream;
+    });
+}
+function stopCamera() {
+  if (mediaStream.value) {
+    mediaStream.value.getTracks().forEach(track => track.stop());
+    mediaStream.value = null;
+  }
+}
+
+function startCapture() {
+  if (!mediaStream.value) return;
+  isCapturing.value = true;
+  captureSegment();
+  captureTimer = setInterval(captureSegment, interval.value * 1000);
+}
+function stopCapture() {
+  isCapturing.value = false;
+  clearInterval(captureTimer);
+  if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
+    mediaRecorder.value.stop();
+  }
+}
+function captureSegment() {
+  if (!mediaStream.value) return;
+  let chunks = [];
+  mediaRecorder.value = new MediaRecorder(mediaStream.value);
+  mediaRecorder.value.ondataavailable = e => chunks.push(e.data);
+  mediaRecorder.value.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const name = `video_${new Date().toISOString().replace(/[:.]/g,'-')}.webm`;
+    videos.value.push({ url, name, blob });
+  };
+  mediaRecorder.value.start();
+  segmentTimer = setTimeout(() => {
+    if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
+      mediaRecorder.value.stop();
+    }
+  }, duration.value * 1000);
+}
+function downloadVideo(video) {
+  const a = document.createElement('a');
+  a.href = video.url;
+  a.download = video.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+function deleteVideo(idx) {
+  URL.revokeObjectURL(videos.value[idx].url);
+  videos.value.splice(idx, 1);
+}
+</script>
+<style scoped>
+/* ...原样拷贝... */
+.vision-system-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 80px;
+}
+.camera-section {
+  background: rgba(10, 20, 40, 0.92);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  padding: 40px 60px;
+  min-width: 600px;
+  margin-bottom: 32px;
+}
+.camera-preview-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.camera-preview {
+  width: 480px;
+  height: 320px;
+  background: #101c2c;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.camera-controls {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.camera-controls label {
+  color: #42a5f5;
+  font-size: 1rem;
+}
+.camera-controls input {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid #1976d2;
+  font-size: 1rem;
+  background: #101c2c;
+  color: #42a5f5;
+}
+.camera-controls button {
+  padding: 8px 22px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+  color: #fff;
+  border: 1.5px solid #2196f3;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.camera-controls button:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+}
+.video-list-section {
+  margin-top: 18px;
+}
+.video-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.video-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.empty-tip {
+  color: #aaa;
+  font-size: 1rem;
+  margin-top: 12px;
+}
+</style> 

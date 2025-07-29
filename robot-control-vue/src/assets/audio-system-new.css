@@ -1,0 +1,995 @@
+/* 听觉系统新布局样式 */
+
+/* 隐藏快速播放相关元素 */
+.quick-play,
+.playback-controls,
+.playback-section,
+.btn-quick {
+    display: none !important;
+}
+
+/* 主布局 - 三层结构 */
+.audio-main {
+    padding: 8px 1%;
+    width: 98%;
+    max-width: none;
+    margin: 0 auto;
+    margin-top: 80px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+}
+
+/* 第一层：录音控制板块 */
+.recording-control-layer {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.first-layer-container {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+}
+
+.recording-panel,
+.speech-to-text-panel {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px 25px 15px 25px;
+    border: 1px solid rgba(77, 166, 255, 0.4);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px rgba(77, 166, 255, 0.1), 0 0 0 1px rgba(77, 166, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    min-height: 250px; /* 减小录音控制和语音转文字面板高度 */
+}
+
+.recording-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.record-control-group,
+.audio-level-group {
+    flex: 1;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+/* 语音转文字面板样式 */
+.speech-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+}
+
+.text-display-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.text-output {
+    flex: 1;
+    min-height: 180px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(77, 166, 255, 0.2);
+    overflow-y: auto;
+    position: relative;
+}
+
+.speech-text {
+    color: #ffffff;
+    font-size: 16px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.placeholder-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.placeholder-text p {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.placeholder-text .hint-text {
+    font-size: 14px;
+    color: rgba(77, 166, 255, 0.7);
+}
+
+.text-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.text-actions .btn {
+    min-width: 100px;
+}
+
+.text-actions .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.text-actions .btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 录音按钮样式 - 确保覆盖旧样式 */
+.record-btn,
+.recording-panel .record-btn,
+.record-control-group .record-btn {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 20px !important;
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.2), rgba(0, 153, 255, 0.3)) !important;
+    border: 2px solid rgba(77, 166, 255, 0.4) !important;
+    border-radius: 50% !important;
+    width: 130px !important;
+    height: 130px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    color: #4da6ff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 25px rgba(77, 166, 255, 0.3) !important;
+}
+
+.record-btn:hover,
+.recording-panel .record-btn:hover,
+.record-control-group .record-btn:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 30px rgba(77, 166, 255, 0.4) !important;
+}
+
+.record-btn.recording,
+.recording-panel .record-btn.recording,
+.record-control-group .record-btn.recording {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 51, 51, 0.4)) !important;
+    border-color: rgba(255, 107, 107, 0.6) !important;
+    color: #ff6b6b !important;
+    animation: recordingPulse 2s infinite !important;
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.4) !important;
+}
+
+@keyframes recordingPulse {
+    0%, 100% {
+        transform: scale(1) !important;
+        box-shadow: 0 0 20px rgba(255, 107, 107, 0.3) !important;
+    }
+    50% {
+        transform: scale(1.1) !important;
+        box-shadow: 0 0 40px rgba(255, 107, 107, 0.6) !important;
+    }
+}
+
+.record-icon,
+.record-btn .record-icon {
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.record-dot,
+.record-btn .record-dot {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    background: currentColor !important;
+}
+
+.record-text,
+.record-btn .record-text {
+    font-size: 14px !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+    color: inherit !important;
+    font-weight: 600 !important;
+}
+
+.record-timer {
+    font-size: 20px;
+    font-weight: 700;
+    color: #4da6ff;
+    font-family: 'Courier New', monospace;
+    margin-top: 8px;
+}
+
+/* 音量监测样式 */
+.audio-level {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.level-label {
+    color: #4da6ff;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.level-meter {
+    width: 200px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(77, 166, 255, 0.4);
+    box-shadow: 0 0 10px rgba(77, 166, 255, 0.2);
+}
+
+.level-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4da6ff, #00ccff, #00ff88);
+    border-radius: 10px;
+    transition: width 0.1s ease;
+    box-shadow: 0 0 8px rgba(77, 166, 255, 0.4);
+}
+
+.level-value {
+    color: #4da6ff;
+    font-weight: 700;
+    font-size: 18px;
+    text-shadow: 0 0 8px rgba(77, 166, 255, 0.5);
+}
+
+/* 语言选择器样式 */
+.language-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.language-selector label {
+    color: #4da6ff;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.language-selector select {
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(77, 166, 255, 0.3);
+    border-radius: 8px;
+    color: #4da6ff;
+    font-size: 14px;
+    min-width: 120px;
+}
+
+/* 第二层：频谱分析显示区域 */
+.visualization-layer {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.viz-panels-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.viz-panel {
+    flex: 1;
+    min-width: 300px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px 20px 12px 20px;
+    border: 1px solid rgba(77, 166, 255, 0.4);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 0 1px rgba(77, 166, 255, 0.1);
+}
+
+.viz-panel .panel-header h3 {
+    color: #4da6ff;
+    font-size: 18px;
+    margin: 0 0 15px 0;
+    text-align: center;
+}
+
+.canvas-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.viz-panel canvas {
+    width: 100%;
+    height: 150px;
+    max-width: 100%;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    display: block;
+}
+
+/* 第三层：数据统计和历史记录区域 */
+.data-layer {
+    flex: 1;
+    min-height: 800px;
+}
+
+.data-panels-container {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+    flex-wrap: wrap;
+}
+
+/* 左侧统计面板 */
+.stats-panel {
+    flex: 1;
+    min-width: 300px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px 20px 12px 20px;
+    border: 1px solid rgba(77, 166, 255, 0.4);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 0 1px rgba(77, 166, 255, 0.1);
+}
+
+.stats-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border-left: 3px solid #4da6ff;
+}
+
+.stat-icon {
+    font-size: 24px;
+    width: 40px;
+    text-align: center;
+}
+
+.stat-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat-label {
+    color: #4da6ff;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.stat-value {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* 右侧历史记录面板 - 增大高度显示4条记录 */
+.history-panel {
+    flex: 1.5;
+    min-width: 400px;
+    min-height: 950px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px 20px 12px 20px;
+    border: 1px solid rgba(77, 166, 255, 0.4);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 0 1px rgba(77, 166, 255, 0.1);
+}
+
+/* 面板标题样式 */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(77, 166, 255, 0.2);
+}
+
+/* 右上角语言选择器 */
+.language-selector-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.language-selector-top label {
+    color: #4da6ff;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.language-selector-top select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(77, 166, 255, 0.3);
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 80px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.language-selector-top select:hover {
+    border-color: rgba(77, 166, 255, 0.6);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.language-selector-top select:focus {
+    outline: none;
+    border-color: #4da6ff;
+    box-shadow: 0 0 8px rgba(77, 166, 255, 0.3);
+}
+
+.panel-header h3 {
+    color: #4da6ff;
+    font-size: 20px;
+    margin: 0;
+    font-weight: 700;
+}
+
+/* 标签页控制 */
+.panel-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.tab-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(77, 166, 255, 0.3);
+    border-radius: 6px;
+    color: #4da6ff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.tab-btn:hover {
+    background: rgba(77, 166, 255, 0.1);
+}
+
+.tab-btn.active {
+    background: rgba(77, 166, 255, 0.2);
+    border-color: rgba(77, 166, 255, 0.6);
+    color: #ffffff;
+}
+
+/* 历史记录内容 */
+.history-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+}
+
+.tab-content {
+    flex: 1;
+    overflow-y: auto;
+    display: none;
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 文本控制区域 */
+.text-controls {
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.search-export-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(77, 166, 255, 0.3);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    min-width: 180px;
+}
+
+.export-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.export-controls select {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(77, 166, 255, 0.3);
+    border-radius: 6px;
+    color: #4da6ff;
+    font-size: 14px;
+    min-width: 100px;
+}
+
+/* 历史记录列表 - 大幅增大高度以显示4条记录 */
+.history-list,
+.text-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px; /* 减少间距以节省空间 */
+    min-height: 800px;
+}
+
+.history-item,
+.text-item {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 6px 10px; /* 减少内边距以节省空间 */
+    border: 1px solid rgba(77, 166, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.history-item:hover,
+.text-item:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(77, 166, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.history-header,
+.text-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.history-time,
+.text-time {
+    color: #4da6ff;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.history-duration {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(77, 166, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.text-confidence {
+    color: #00ff00;
+    font-size: 11px;
+    background: rgba(0, 255, 0, 0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* 文本内容行 - 包含文本和复制按钮 */
+.text-content-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid #4da6ff;
+    padding: 6px 8px;
+}
+
+.text-content {
+    flex: 1;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    word-wrap: break-word;
+}
+
+/* 复制按钮样式 */
+.btn-copy {
+    flex-shrink: 0;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    min-width: 50px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.2), rgba(0, 153, 255, 0.3)) !important;
+    color: #4da6ff !important;
+    border: 1px solid rgba(77, 166, 255, 0.4) !important;
+    border-radius: 4px !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-copy:hover {
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.3), rgba(0, 153, 255, 0.4)) !important;
+    border-color: rgba(77, 166, 255, 0.8) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(77, 166, 255, 0.3);
+}
+
+.history-actions,
+.text-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3);
+}
+
+.btn {
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.2), rgba(0, 153, 255, 0.3));
+    color: #4da6ff;
+    border: 1px solid rgba(77, 166, 255, 0.4);
+}
+
+.btn:hover {
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.3), rgba(0, 153, 255, 0.4));
+    border-color: rgba(77, 166, 255, 0.8);
+}
+
+.btn-icon {
+    font-size: 12px;
+}
+
+/* 占位符样式 */
+.placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
+.placeholder p {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.hint-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .first-layer-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .recording-controls {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .record-control-group,
+    .audio-level-group {
+        min-width: 100%;
+    }
+
+    .text-actions {
+        justify-content: center;
+    }
+
+    .viz-panels-container {
+        flex-direction: column;
+    }
+
+    .data-panels-container {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .audio-main {
+        padding: 8px 2%;
+        gap: 15px;
+    }
+
+    .recording-panel,
+    .speech-to-text-panel,
+    .viz-panel,
+    .stats-panel,
+    .history-panel {
+        padding: 15px;
+    }
+
+    .first-layer-container {
+        flex-direction: column;
+    }
+
+    .record-btn {
+        width: 80px;
+        height: 80px;
+        padding: 12px;
+    }
+
+    .record-text {
+        font-size: 11px;
+    }
+
+    .record-timer {
+        font-size: 18px;
+    }
+
+    .level-meter {
+        width: 160px;
+        height: 20px;
+    }
+
+    .text-output {
+        min-height: 120px;
+        padding: 15px;
+    }
+
+    .speech-text {
+        font-size: 14px;
+    }
+
+    .text-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .text-actions .btn {
+        min-width: 100%;
+    }
+
+    .search-export-row {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .search-box {
+        min-width: 100%;
+    }
+
+    .search-box input {
+        min-width: 100%;
+    }
+
+    .export-controls {
+        justify-content: center;
+    }
+
+    .export-controls select {
+        min-width: 120px;
+    }
+}
+
+/* 浏览器兼容性提示样式 */
+.recognition-banner {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.recognition-banner.warning {
+    background: rgba(255, 107, 107, 0.1);
+    border-color: rgba(255, 107, 107, 0.3);
+}
+
+.banner-icon {
+    font-size: 24px;
+}
+
+.banner-text {
+    flex: 1;
+}
+
+.banner-text strong {
+    color: #ff6b6b;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.banner-text p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    font-size: 14px;
+}
+
+/* 滚动条样式 */
+.history-content::-webkit-scrollbar,
+.history-list::-webkit-scrollbar,
+.text-list::-webkit-scrollbar,
+.text-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-content::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track,
+.text-list::-webkit-scrollbar-track,
+.text-output::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.history-content::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb,
+.text-list::-webkit-scrollbar-thumb,
+.text-output::-webkit-scrollbar-thumb {
+    background: rgba(77, 166, 255, 0.3);
+    border-radius: 3px;
+}
+
+.history-content::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover,
+.text-list::-webkit-scrollbar-thumb:hover,
+.text-output::-webkit-scrollbar-thumb:hover {
+    background: rgba(77, 166, 255, 0.5);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.recording-panel,
+.speech-to-text-panel,
+.viz-panel,
+.stats-panel,
+.history-panel {
+    animation: fadeIn 0.5s ease;
+}
+
+/* 语音文字实时更新动画 */
+.speech-text {
+    animation: textUpdate 0.3s ease;
+}
+
+@keyframes textUpdate {
+    from {
+        opacity: 0.7;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 按钮禁用状态的视觉反馈 */
+.text-actions .btn:disabled {
+    background: rgba(77, 166, 255, 0.1);
+    border-color: rgba(77, 166, 255, 0.2);
+    color: rgba(77, 166, 255, 0.4);
+}
+
+/* 确保所有文字使用蓝色系 */
+.recording-panel h3,
+.viz-panel h3,
+.stats-panel h3,
+.history-panel h3 {
+    background: linear-gradient(135deg, #4da6ff, #ffffff);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 输入框焦点样式 */
+input:focus,
+select:focus {
+    outline: none;
+    border-color: rgba(77, 166, 255, 0.6);
+    box-shadow: 0 0 10px rgba(77, 166, 255, 0.3);
+}
+
+/* 确保按钮文字颜色一致 */
+.btn,
+.tab-btn {
+    color: #4da6ff;
+}
+
+.btn:hover,
+.tab-btn:hover {
+    color: #ffffff;
+}

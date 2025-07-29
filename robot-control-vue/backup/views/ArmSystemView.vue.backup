@@ -1,0 +1,874 @@
+<template>
+  <div class="container">
+    <!-- 顶部导航 -->
+    <header class="header">
+      <div class="nav-section">
+        <button class="btn btn-back" @click="goBack">← 返回主页</button>
+        <h1 class="title">手臂系统控制中心</h1>
+      </div>
+      <div class="header-controls">
+        <div class="header-buttons">
+          <button class="btn btn-small" @click="emergencyStop">紧急停止</button>
+          <button class="btn btn-small" @click="resetArms">重置手臂</button>
+          <button class="btn btn-small" @click="exportActionData">导出数据</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="arm-main">
+      <!-- 使用左右布局容器 -->
+      <div class="arm-layout-container">
+        <!-- 左侧动作库管理区 -->
+        <div class="arm-left-section">
+          <!-- 动作库管理 -->
+          <section class="action-library-section">
+            <div class="section-header">
+              <h3>动作库管理</h3>
+              <div class="library-stats">
+                <span>共 {{ actionLibrary.length }} 个动作</span>
+                <button class="btn btn-small btn-primary" @click="showAddActionDialog">+ 添加动作</button>
+              </div>
+            </div>
+
+            <!-- 搜索和筛选 -->
+            <div class="action-controls">
+              <div class="search-box">
+                <input 
+                  type="text" 
+                  v-model="searchText" 
+                  placeholder="搜索动作名称或描述..."
+                  class="search-input"
+                >
+              </div>
+              <div class="filter-controls">
+                <select v-model="selectedCategory" class="filter-select">
+                  <option value="">所有分类</option>
+                  <option value="basic">基础动作</option>
+                  <option value="gesture">手势动作</option>
+                  <option value="manipulation">操作动作</option>
+                  <option value="expression">表达动作</option>
+                  <option value="complex">复合动作</option>
+                </select>
+                <select v-model="selectedDifficulty" class="filter-select">
+                  <option value="">所有难度</option>
+                  <option value="easy">简单</option>
+                  <option value="medium">中等</option>
+                  <option value="hard">困难</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 动作列表 -->
+            <div class="action-list">
+              <div 
+                class="action-item" 
+                v-for="action in filteredActionLibrary" 
+                :key="action.id"
+                :class="{ executing: executingActionId === action.id }"
+              >
+                <div class="action-header">
+                  <div class="action-info">
+                    <span class="action-name">{{ action.name }}</span>
+                    <div class="action-meta">
+                      <span class="action-category">{{ getCategoryName(action.category) }}</span>
+                      <span class="action-difficulty" :class="action.difficulty">{{ getDifficultyName(action.difficulty) }}</span>
+                      <span class="action-duration">{{ action.duration }}s</span>
+                    </div>
+                  </div>
+                  <div class="action-actions">
+                    <button 
+                      class="btn btn-mini btn-execute" 
+                      @click="executeAction(action)"
+                      :disabled="executingActionId === action.id || systemStatus !== 'ready'"
+                    >
+                      {{ executingActionId === action.id ? '执行中' : '执行' }}
+                    </button>
+                    <button class="btn btn-mini btn-edit" @click="editAction(action)">编辑</button>
+                    <button class="btn btn-mini btn-danger" @click="deleteAction(action.id)">删除</button>
+                  </div>
+                </div>
+                <div class="action-description">
+                  {{ action.description }}
+                </div>
+                <div class="action-steps" v-if="action.showSteps">
+                  <h5>动作步骤:</h5>
+                  <div class="step-list">
+                    <div class="step-item" v-for="(step, index) in action.steps" :key="index">
+                      <span class="step-number">{{ index + 1 }}</span>
+                      <span class="step-description">{{ step.description }}</span>
+                      <span class="step-duration">{{ step.duration }}s</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="action-controls">
+                  <button class="btn btn-mini" @click="toggleSteps(action.id)">
+                    {{ action.showSteps ? '隐藏步骤' : '显示步骤' }}
+                  </button>
+                  <button class="btn btn-mini" @click="previewAction(action)">预览</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 右侧控制面板区 -->
+        <div class="arm-right-section">
+          <!-- 执行控制面板 -->
+          <section class="execution-section">
+            <div class="section-header">
+              <h3>执行控制</h3>
+              <div class="system-status" :class="systemStatus">
+                <div class="status-dot"></div>
+                <span>{{ systemStatusText }}</span>
+              </div>
+            </div>
+
+            <div class="execution-controls">
+              <!-- 当前执行信息 -->
+              <div class="current-execution" v-if="currentAction">
+                <h4>正在执行</h4>
+                <div class="execution-info">
+                  <div class="execution-name">{{ currentAction.name }}</div>
+                  <div class="execution-description">{{ currentAction.description }}</div>
+                  <div class="execution-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill" :style="{ width: executionProgress + '%' }"></div>
+                    </div>
+                    <div class="progress-text">
+                      {{ Math.round(executionProgress) }}% - {{ currentStepDescription }}
+                    </div>
+                  </div>
+                </div>
+                <div class="execution-buttons">
+                  <button class="btn btn-secondary" @click="pauseExecution">暂停</button>
+                  <button class="btn btn-danger" @click="stopExecution">停止</button>
+                </div>
+              </div>
+
+              <!-- 快速动作按钮 -->
+              <div class="quick-actions">
+                <h4>快速动作</h4>
+                <div class="quick-buttons">
+                  <button 
+                    class="btn btn-quick" 
+                    v-for="action in quickActions" 
+                    :key="action.id"
+                    @click="executeAction(action)"
+                    :disabled="systemStatus !== 'ready'"
+                  >
+                    {{ action.name }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 手臂状态监控 -->
+              <div class="arm-status">
+                <h4>手臂状态</h4>
+                <div class="status-grid">
+                  <div class="status-item">
+                    <div class="status-label">左臂位置</div>
+                    <div class="status-value">{{ armStatus.leftArm.position }}</div>
+                    <div class="status-indicator" :class="armStatus.leftArm.status"></div>
+                  </div>
+                  <div class="status-item">
+                    <div class="status-label">右臂位置</div>
+                    <div class="status-value">{{ armStatus.rightArm.position }}</div>
+                    <div class="status-indicator" :class="armStatus.rightArm.status"></div>
+                  </div>
+                  <div class="status-item">
+                    <div class="status-label">电机温度</div>
+                    <div class="status-value">{{ armStatus.temperature }}°C</div>
+                    <div class="status-indicator" :class="getTemperatureStatus(armStatus.temperature)"></div>
+                  </div>
+                  <div class="status-item">
+                    <div class="status-label">电池电量</div>
+                    <div class="status-value">{{ armStatus.battery }}%</div>
+                    <div class="status-indicator" :class="getBatteryStatus(armStatus.battery)"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 动作序列管理 -->
+          <section class="sequence-section">
+            <div class="section-header">
+              <h3>动作序列</h3>
+              <button class="btn btn-small" @click="showSequenceDialog">创建序列</button>
+            </div>
+
+            <div class="sequence-controls">
+              <!-- 当前序列 -->
+              <div class="current-sequence" v-if="currentSequence.actions.length > 0">
+                <h4>当前序列</h4>
+                <div class="sequence-list">
+                  <div 
+                    class="sequence-item" 
+                    v-for="(action, index) in currentSequence.actions" 
+                    :key="index"
+                    :class="{ active: currentSequence.currentIndex === index }"
+                  >
+                    <span class="sequence-number">{{ index + 1 }}</span>
+                    <span class="sequence-name">{{ action.name }}</span>
+                    <button class="btn btn-mini btn-danger" @click="removeFromSequence(index)">移除</button>
+                  </div>
+                </div>
+                <div class="sequence-buttons">
+                  <button class="btn btn-primary" @click="executeSequence" :disabled="systemStatus !== 'ready'">
+                    执行序列
+                  </button>
+                  <button class="btn btn-secondary" @click="clearSequence">清空序列</button>
+                  <button class="btn btn-secondary" @click="saveSequence">保存序列</button>
+                </div>
+              </div>
+
+              <!-- 保存的序列 -->
+              <div class="saved-sequences">
+                <h4>保存的序列</h4>
+                <div class="saved-list">
+                  <div class="saved-item" v-for="sequence in savedSequences" :key="sequence.id">
+                    <div class="saved-header">
+                      <span class="saved-name">{{ sequence.name }}</span>
+                      <span class="saved-count">{{ sequence.actions.length }} 个动作</span>
+                    </div>
+                    <div class="saved-actions">
+                      <button class="btn btn-mini" @click="loadSequence(sequence)">加载</button>
+                      <button class="btn btn-mini" @click="executeSequence(sequence)">执行</button>
+                      <button class="btn btn-mini btn-danger" @click="deleteSavedSequence(sequence.id)">删除</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 执行历史 -->
+          <section class="history-section">
+            <div class="section-header">
+              <h3>执行历史</h3>
+              <button class="btn btn-small" @click="clearHistory">清空历史</button>
+            </div>
+
+            <div class="history-list">
+              <div class="history-item" v-for="item in executionHistory" :key="item.id">
+                <div class="history-header">
+                  <span class="history-name">{{ item.name }}</span>
+                  <span class="history-time">{{ formatTime(item.timestamp) }}</span>
+                </div>
+                <div class="history-status" :class="item.status">
+                  {{ getStatusText(item.status) }}
+                </div>
+                <div class="history-duration">
+                  执行时长: {{ item.duration }}s
+                </div>
+                <button class="btn btn-mini" @click="repeatAction(item)">重复执行</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- 添加/编辑动作对话框 -->
+    <div class="modal" v-if="showActionDialog" @click="closeActionDialog">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>{{ editingAction ? '编辑动作' : '添加动作' }}</h3>
+          <button class="modal-close" @click="closeActionDialog">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>动作名称:</label>
+            <input type="text" v-model="actionForm.name" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>描述:</label>
+            <textarea v-model="actionForm.description" class="form-textarea"></textarea>
+          </div>
+          <div class="form-group">
+            <label>分类:</label>
+            <select v-model="actionForm.category" class="form-select">
+              <option value="basic">基础动作</option>
+              <option value="gesture">手势动作</option>
+              <option value="manipulation">操作动作</option>
+              <option value="expression">表达动作</option>
+              <option value="complex">复合动作</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>难度:</label>
+            <select v-model="actionForm.difficulty" class="form-select">
+              <option value="easy">简单</option>
+              <option value="medium">中等</option>
+              <option value="hard">困难</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>持续时间 (秒):</label>
+            <input type="number" v-model="actionForm.duration" min="0.1" step="0.1" class="form-input">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeActionDialog">取消</button>
+          <button class="btn btn-primary" @click="saveAction">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 创建序列对话框 -->
+    <div class="modal" v-if="showSequenceDialog" @click="closeSequenceDialog">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>创建动作序列</h3>
+          <button class="modal-close" @click="closeSequenceDialog">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>序列名称:</label>
+            <input type="text" v-model="sequenceForm.name" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>选择动作:</label>
+            <div class="action-selector">
+              <div 
+                class="selector-item" 
+                v-for="action in actionLibrary" 
+                :key="action.id"
+                @click="addToSequence(action)"
+              >
+                <span class="selector-name">{{ action.name }}</span>
+                <span class="selector-duration">{{ action.duration }}s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeSequenceDialog">取消</button>
+          <button class="btn btn-primary" @click="saveSequenceDialog">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+// 响应式数据
+const searchText = ref('')
+const selectedCategory = ref('')
+const selectedDifficulty = ref('')
+const executingActionId = ref(null)
+const systemStatus = ref('ready')
+const systemStatusText = ref('系统就绪')
+const currentAction = ref(null)
+const executionProgress = ref(0)
+const currentStepDescription = ref('')
+
+// 对话框相关
+const showActionDialog = ref(false)
+const showSequenceDialog = ref(false)
+const editingAction = ref(null)
+const actionForm = reactive({
+  name: '',
+  description: '',
+  category: 'basic',
+  difficulty: 'easy',
+  duration: 2.0
+})
+const sequenceForm = reactive({
+  name: ''
+})
+
+// 动作库数据
+const actionLibrary = ref([
+  {
+    id: 1,
+    name: '挥手问候',
+    description: '友好的挥手问候动作',
+    category: 'gesture',
+    difficulty: 'easy',
+    duration: 2.5,
+    showSteps: false,
+    steps: [
+      { description: '抬起右臂', duration: 0.8 },
+      { description: '左右摆动手掌', duration: 1.2 },
+      { description: '放下右臂', duration: 0.5 }
+    ]
+  },
+  {
+    id: 2,
+    name: '握手动作',
+    description: '标准的握手礼仪动作',
+    category: 'gesture',
+    difficulty: 'medium',
+    duration: 3.0,
+    showSteps: false,
+    steps: [
+      { description: '伸出右臂', duration: 1.0 },
+      { description: '握拳姿态', duration: 1.0 },
+      { description: '收回右臂', duration: 1.0 }
+    ]
+  },
+  {
+    id: 3,
+    name: '拿取物品',
+    description: '精确拿取桌面物品的动作',
+    category: 'manipulation',
+    difficulty: 'hard',
+    duration: 4.5,
+    showSteps: false,
+    steps: [
+      { description: '定位目标物品', duration: 1.0 },
+      { description: '伸出手臂接近', duration: 1.5 },
+      { description: '张开手指抓取', duration: 1.0 },
+      { description: '提起物品', duration: 1.0 }
+    ]
+  },
+  {
+    id: 4,
+    name: '指向动作',
+    description: '用手指指向特定方向',
+    category: 'expression',
+    difficulty: 'easy',
+    duration: 1.8,
+    showSteps: false,
+    steps: [
+      { description: '抬起手臂', duration: 0.6 },
+      { description: '伸出食指', duration: 0.6 },
+      { description: '保持指向', duration: 0.6 }
+    ]
+  },
+  {
+    id: 5,
+    name: '双臂展开',
+    description: '张开双臂表示欢迎',
+    category: 'expression',
+    difficulty: 'medium',
+    duration: 3.2,
+    showSteps: false,
+    steps: [
+      { description: '同时抬起双臂', duration: 1.2 },
+      { description: '向两侧展开', duration: 1.0 },
+      { description: '放下双臂', duration: 1.0 }
+    ]
+  }
+])
+
+// 手臂状态
+const armStatus = reactive({
+  leftArm: { position: '待机位置', status: 'normal' },
+  rightArm: { position: '待机位置', status: 'normal' },
+  temperature: 35,
+  battery: 88
+})
+
+// 当前序列
+const currentSequence = reactive({
+  actions: [],
+  currentIndex: -1
+})
+
+// 保存的序列
+const savedSequences = ref([
+  {
+    id: 1,
+    name: '欢迎客人',
+    actions: [
+      { id: 1, name: '挥手问候' },
+      { id: 5, name: '双臂展开' }
+    ]
+  },
+  {
+    id: 2,
+    name: '服务流程',
+    actions: [
+      { id: 4, name: '指向动作' },
+      { id: 3, name: '拿取物品' },
+      { id: 2, name: '握手动作' }
+    ]
+  }
+])
+
+// 执行历史
+const executionHistory = ref([
+  { id: 1, name: '挥手问候', timestamp: Date.now() - 300000, status: 'completed', duration: 2.5 },
+  { id: 2, name: '握手动作', timestamp: Date.now() - 600000, status: 'completed', duration: 3.0 },
+  { id: 3, name: '拿取物品', timestamp: Date.now() - 900000, status: 'failed', duration: 2.1 }
+])
+
+// 快速动作
+const quickActions = computed(() => {
+  return actionLibrary.value.filter(action => 
+    action.difficulty === 'easy' || action.category === 'gesture'
+  ).slice(0, 6)
+})
+
+// 过滤后的动作库
+const filteredActionLibrary = computed(() => {
+  return actionLibrary.value.filter(action => {
+    const matchesSearch = !searchText.value || 
+      action.name.toLowerCase().includes(searchText.value.toLowerCase()) ||
+      action.description.toLowerCase().includes(searchText.value.toLowerCase())
+    
+    const matchesCategory = !selectedCategory.value || action.category === selectedCategory.value
+    const matchesDifficulty = !selectedDifficulty.value || action.difficulty === selectedDifficulty.value
+    
+    return matchesSearch && matchesCategory && matchesDifficulty
+  })
+})
+
+// 方法
+const goBack = () => {
+  router.push('/')
+}
+
+const getCategoryName = (category) => {
+  const categoryMap = {
+    basic: '基础动作',
+    gesture: '手势动作',
+    manipulation: '操作动作',
+    expression: '表达动作',
+    complex: '复合动作'
+  }
+  return categoryMap[category] || category
+}
+
+const getDifficultyName = (difficulty) => {
+  const difficultyMap = {
+    easy: '简单',
+    medium: '中等',
+    hard: '困难'
+  }
+  return difficultyMap[difficulty] || difficulty
+}
+
+const getTemperatureStatus = (temp) => {
+  if (temp > 50) return 'error'
+  if (temp > 40) return 'warning'
+  return 'normal'
+}
+
+const getBatteryStatus = (battery) => {
+  if (battery < 20) return 'error'
+  if (battery < 50) return 'warning'
+  return 'normal'
+}
+
+const getStatusText = (status) => {
+  const statusMap = {
+    completed: '执行完成',
+    failed: '执行失败',
+    cancelled: '已取消',
+    executing: '执行中'
+  }
+  return statusMap[status] || status
+}
+
+const executeAction = (action) => {
+  if (systemStatus.value !== 'ready') return
+  
+  executingActionId.value = action.id
+  currentAction.value = action
+  systemStatus.value = 'executing'
+  systemStatusText.value = '正在执行动作'
+  executionProgress.value = 0
+  
+  // 添加到执行历史
+  const historyItem = {
+    id: Date.now(),
+    name: action.name,
+    timestamp: Date.now(),
+    status: 'executing',
+    duration: 0
+  }
+  executionHistory.value.unshift(historyItem)
+  
+  // 模拟动作执行
+  const totalDuration = action.duration * 1000
+  const stepDuration = totalDuration / action.steps.length
+  let currentStep = 0
+  let elapsed = 0
+  
+  const executionInterval = setInterval(() => {
+    elapsed += 100
+    executionProgress.value = (elapsed / totalDuration) * 100
+    
+    const newStep = Math.floor(elapsed / stepDuration)
+    if (newStep !== currentStep && newStep < action.steps.length) {
+      currentStep = newStep
+      currentStepDescription.value = action.steps[currentStep].description
+    }
+    
+    if (elapsed >= totalDuration) {
+      clearInterval(executionInterval)
+      completeExecution(historyItem, action.duration)
+    }
+  }, 100)
+}
+
+const completeExecution = (historyItem, duration) => {
+  executingActionId.value = null
+  currentAction.value = null
+  systemStatus.value = 'ready'
+  systemStatusText.value = '系统就绪'
+  executionProgress.value = 0
+  currentStepDescription.value = ''
+  
+  // 更新历史记录
+  historyItem.status = 'completed'
+  historyItem.duration = duration
+}
+
+const pauseExecution = () => {
+  // 暂停执行逻辑
+  systemStatus.value = 'paused'
+  systemStatusText.value = '执行已暂停'
+}
+
+const stopExecution = () => {
+  executingActionId.value = null
+  currentAction.value = null
+  systemStatus.value = 'ready'
+  systemStatusText.value = '系统就绪'
+  executionProgress.value = 0
+  currentStepDescription.value = ''
+}
+
+const emergencyStop = () => {
+  stopExecution()
+  systemStatusText.value = '紧急停止'
+}
+
+const resetArms = () => {
+  stopExecution()
+  armStatus.leftArm.position = '待机位置'
+  armStatus.rightArm.position = '待机位置'
+  systemStatusText.value = '手臂已重置'
+}
+
+const toggleSteps = (actionId) => {
+  const action = actionLibrary.value.find(a => a.id === actionId)
+  if (action) {
+    action.showSteps = !action.showSteps
+  }
+}
+
+const previewAction = (action) => {
+  alert(`预览动作: ${action.name}\n${action.description}\n持续时间: ${action.duration}秒`)
+}
+
+const showAddActionDialog = () => {
+  editingAction.value = null
+  actionForm.name = ''
+  actionForm.description = ''
+  actionForm.category = 'basic'
+  actionForm.difficulty = 'easy'
+  actionForm.duration = 2.0
+  showActionDialog.value = true
+}
+
+const editAction = (action) => {
+  editingAction.value = action
+  actionForm.name = action.name
+  actionForm.description = action.description
+  actionForm.category = action.category
+  actionForm.difficulty = action.difficulty
+  actionForm.duration = action.duration
+  showActionDialog.value = true
+}
+
+const closeActionDialog = () => {
+  showActionDialog.value = false
+  editingAction.value = null
+}
+
+const saveAction = () => {
+  if (!actionForm.name.trim() || !actionForm.description.trim()) {
+    alert('请填写完整信息')
+    return
+  }
+  
+  if (editingAction.value) {
+    // 编辑现有动作
+    const index = actionLibrary.value.findIndex(a => a.id === editingAction.value.id)
+    if (index !== -1) {
+      actionLibrary.value[index] = {
+        ...actionLibrary.value[index],
+        name: actionForm.name,
+        description: actionForm.description,
+        category: actionForm.category,
+        difficulty: actionForm.difficulty,
+        duration: actionForm.duration
+      }
+    }
+  } else {
+    // 添加新动作
+    const newAction = {
+      id: Date.now(),
+      name: actionForm.name,
+      description: actionForm.description,
+      category: actionForm.category,
+      difficulty: actionForm.difficulty,
+      duration: actionForm.duration,
+      showSteps: false,
+      steps: [
+        { description: '准备动作', duration: actionForm.duration * 0.3 },
+        { description: '执行动作', duration: actionForm.duration * 0.4 },
+        { description: '完成动作', duration: actionForm.duration * 0.3 }
+      ]
+    }
+    actionLibrary.value.unshift(newAction)
+  }
+  
+  closeActionDialog()
+}
+
+const deleteAction = (actionId) => {
+  if (confirm('确定要删除这个动作吗？')) {
+    const index = actionLibrary.value.findIndex(a => a.id === actionId)
+    if (index !== -1) {
+      actionLibrary.value.splice(index, 1)
+    }
+  }
+}
+
+const addToSequence = (action) => {
+  currentSequence.actions.push(action)
+}
+
+const removeFromSequence = (index) => {
+  currentSequence.actions.splice(index, 1)
+}
+
+const executeSequence = (sequence) => {
+  const targetSequence = sequence || currentSequence
+  if (targetSequence.actions.length === 0) return
+  
+  // 执行序列中的每个动作
+  let currentIndex = 0
+  const executeNext = () => {
+    if (currentIndex < targetSequence.actions.length) {
+      const action = targetSequence.actions[currentIndex]
+      executeAction(action)
+      currentIndex++
+      setTimeout(executeNext, action.duration * 1000 + 500)
+    }
+  }
+  executeNext()
+}
+
+const clearSequence = () => {
+  currentSequence.actions = []
+  currentSequence.currentIndex = -1
+}
+
+const saveSequence = () => {
+  if (currentSequence.actions.length === 0) {
+    alert('序列为空，无法保存')
+    return
+  }
+  
+  const name = prompt('请输入序列名称:')
+  if (name) {
+    const newSequence = {
+      id: Date.now(),
+      name: name,
+      actions: [...currentSequence.actions]
+    }
+    savedSequences.value.unshift(newSequence)
+  }
+}
+
+const loadSequence = (sequence) => {
+  currentSequence.actions = [...sequence.actions]
+  currentSequence.currentIndex = -1
+}
+
+const deleteSavedSequence = (sequenceId) => {
+  if (confirm('确定要删除这个序列吗？')) {
+    const index = savedSequences.value.findIndex(s => s.id === sequenceId)
+    if (index !== -1) {
+      savedSequences.value.splice(index, 1)
+    }
+  }
+}
+
+const repeatAction = (historyItem) => {
+  const action = actionLibrary.value.find(a => a.name === historyItem.name)
+  if (action) {
+    executeAction(action)
+  }
+}
+
+const clearHistory = () => {
+  if (confirm('确定要清空执行历史吗？')) {
+    executionHistory.value = []
+  }
+}
+
+const exportActionData = () => {
+  const data = {
+    actionLibrary: actionLibrary.value,
+    savedSequences: savedSequences.value,
+    executionHistory: executionHistory.value,
+    armStatus: armStatus,
+    timestamp: new Date().toISOString()
+  }
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `arm-system-data-${Date.now()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const formatTime = (timestamp) => {
+  return new Date(timestamp).toLocaleTimeString()
+}
+
+const closeSequenceDialog = () => {
+  showSequenceDialog.value = false
+}
+
+const saveSequenceDialog = () => {
+  if (!sequenceForm.name.trim()) {
+    alert('请输入序列名称')
+    return
+  }
+  
+  if (currentSequence.actions.length === 0) {
+    alert('请至少添加一个动作')
+    return
+  }
+  
+  const newSequence = {
+    id: Date.now(),
+    name: sequenceForm.name,
+    actions: [...currentSequence.actions]
+  }
+  savedSequences.value.unshift(newSequence)
+  
+  closeSequenceDialog()
+  clearSequence()
+}
+
+// 生命周期
+onMounted(() => {
+  console.log('手臂系统组件已挂载')
+})
+
+onUnmounted(() => {
+  console.log('手臂系统组件已卸载')
+  stopExecution()
+})
+</script>
+
+<style scoped>
+/* 组件特定样式将在CSS文件中添加 */
+</style>

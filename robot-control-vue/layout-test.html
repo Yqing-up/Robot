@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>布局测试页面</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-container {
+            width: 98%;
+            max-width: none;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(0, 100, 255, 0.1);
+            border: 2px solid #0066ff;
+            box-sizing: border-box;
+        }
+        
+        .width-info {
+            background: rgba(0, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #00ffff;
+        }
+        
+        .measurement {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .content-area {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .side-margins {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 1%;
+            background: rgba(255, 0, 0, 0.3);
+            border: 1px solid red;
+        }
+        
+        .left-margin {
+            left: 0;
+        }
+        
+        .right-margin {
+            right: 0;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #ffff00;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左右边距指示器 -->
+    <div class="side-margins left-margin"></div>
+    <div class="side-margins right-margin"></div>
+    
+    <div class="test-container">
+        <h1>机器人控制系统 - 布局测试页面</h1>
+        
+        <div class="width-info">
+            <h2>屏幕和容器宽度信息</h2>
+            <div class="measurement">
+                <span>屏幕宽度:</span>
+                <span id="screenWidth">-</span>
+            </div>
+            <div class="measurement">
+                <span>容器宽度:</span>
+                <span id="containerWidth">-</span>
+            </div>
+            <div class="measurement">
+                <span>容器宽度占比:</span>
+                <span id="widthPercentage">-</span>
+            </div>
+            <div class="measurement">
+                <span>左右空白总计:</span>
+                <span id="marginTotal">-</span>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <h3>内容区域测试</h3>
+            <p>这个测试页面用于验证布局优化效果：</p>
+            <ul>
+                <li>容器宽度应该是屏幕宽度的98%</li>
+                <li>左右空白区域应该控制在2%以内</li>
+                <li>红色边框显示了1%的边距参考线</li>
+                <li>在1920x1080分辨率下，内容应该充分利用可用空间</li>
+            </ul>
+        </div>
+        
+        <div class="instructions">
+            <h3>测试说明</h3>
+            <p>1. 检查上方显示的宽度信息</p>
+            <p>2. 确认容器宽度占比接近98%</p>
+            <p>3. 观察左右红色边框，确认空白区域很小</p>
+            <p>4. 在不同分辨率下测试响应式效果</p>
+        </div>
+    </div>
+    
+    <script>
+        function updateMeasurements() {
+            const screenWidth = window.innerWidth;
+            const container = document.querySelector('.test-container');
+            const containerWidth = container.offsetWidth;
+            const widthPercentage = ((containerWidth / screenWidth) * 100).toFixed(2);
+            const marginTotal = ((screenWidth - containerWidth) / screenWidth * 100).toFixed(2);
+            
+            document.getElementById('screenWidth').textContent = screenWidth + 'px';
+            document.getElementById('containerWidth').textContent = containerWidth + 'px';
+            document.getElementById('widthPercentage').textContent = widthPercentage + '%';
+            document.getElementById('marginTotal').textContent = marginTotal + '%';
+        }
+        
+        // 初始测量
+        updateMeasurements();
+        
+        // 窗口大小改变时重新测量
+        window.addEventListener('resize', updateMeasurements);
+    </script>
+</body>
+</html>
